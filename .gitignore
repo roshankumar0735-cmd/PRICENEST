@@ -1,0 +1,8 @@
+.venv_pricenest/
+.deps_pricenest/
+__pycache__/
+*.pyc
+node_modules/
+.env
+dist/
+build/
