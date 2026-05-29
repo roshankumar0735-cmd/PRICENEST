@@ -142,7 +142,7 @@ function formatDisplayValues(prediction, selectedUnit, enteredCarpetArea) {
     Math.abs(displayCarpetArea - Number(originalCarpetArea)) <= 0.01;
   const dynamicPrice =
     isOriginalDatasetArea
-      ? prediction.base_dataset_price || prediction.predicted_price
+      ? (prediction.base_dataset_price || prediction.converted_base_price || prediction.predicted_price || 0) + amenityBoost
       : displayCarpetArea * (rate || 0) + amenityBoost;
 
   return {
@@ -1011,6 +1011,9 @@ function App() {
                 <div className="result-values">
                   <Metric label="Property Name" value={prediction.property_name} />
                   <Metric label="Predicted Price" value={formatInr(predictionDisplay?.predictedPrice || prediction.predicted_price)} />
+                  {Number(prediction.amenity_price_boost?.total || 0) > 0 && (
+                    <Metric label="Amenities Boost" value={formatInr(prediction.amenity_price_boost.total)} />
+                  )}
                   <Metric label={rateLabel(predictionDisplay?.unit || prediction.rate_unit || prediction.carpet_area_unit || form.carpet_area_unit || "sqft")} value={formatRate(predictionDisplay?.rate || prediction.price_per_sqft)} />
                   <Metric label="Carpet Area" value={formatArea(predictionDisplay?.carpetArea || prediction.carpet_area || form.carpet_area, predictionDisplay?.unit || prediction.carpet_area_unit || form.carpet_area_unit || "sqft")} />
                   <Metric label="Total Area" value={formatArea(predictionDisplay?.totalArea || prediction.total_area, predictionDisplay?.unit || "sqft")} />
