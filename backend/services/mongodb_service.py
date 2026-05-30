@@ -23,6 +23,24 @@ except Exception:  # pragma: no cover - keeps app bootable without pymongo
 LOGGER = logging.getLogger(__name__)
 
 
+def load_local_env() -> None:
+    """Load simple KEY=VALUE pairs from the project .env file if present."""
+    env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
+    if not os.path.exists(env_path):
+        return
+
+    try:
+        with open(env_path, "r", encoding="utf-8") as env_file:
+            for line in env_file:
+                stripped = line.strip()
+                if not stripped or stripped.startswith("#") or "=" not in stripped:
+                    continue
+                key, value = stripped.split("=", 1)
+                os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+    except Exception as exc:
+        LOGGER.warning("Could not load local .env file: %s", exc)
+
+
 def utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -38,6 +56,7 @@ class MongoDBService:
         self._connect()
 
     def _connect(self) -> None:
+        load_local_env()
         uri = os.environ.get("MONGODB_URI", "").strip()
         if not uri:
             LOGGER.info("MONGODB_URI is not set; MongoDB persistence is disabled.")
