@@ -542,6 +542,7 @@ function App() {
         original_carpet_area: form.original_carpet_area || availableCarpetAreaOptions.find((item) => String(item.value) === String(form.carpet_area))?.value || form.carpet_area,
         original_carpet_area_unit: form.original_carpet_area_unit || availableCarpetAreaOptions.find((item) => String(item.value) === String(form.carpet_area))?.unit || form.carpet_area_unit,
         property_name: `${form.bedrooms} BHK in ${form.location}, ${form.city}`,
+        user_email: currentUser?.email || "guest",
       };
       const response = await fetch(`${API_BASE}/predict`, {
         method: "POST",
@@ -1477,6 +1478,13 @@ function AuthModal({ onClose, onUserChange, authConfig }) {
               provider: "google",
               token: tokenResponse.access_token,
             };
+            fetch(`${API_BASE}/auth/google-login`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name: user.name, email: user.email }),
+            }).catch((mongoError) => {
+              console.error("Google login persistence failed:", mongoError);
+            });
             localStorage.setItem("pricenest_user", JSON.stringify(user));
             onUserChange(user);
             onClose();

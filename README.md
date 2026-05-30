@@ -49,6 +49,7 @@ The main purpose of PriceNest is to provide a realistic, intelligent, and beginn
 - Real estate feature engineering
 - Dynamic area unit conversion
 - Google authentication
+- Optional MongoDB Atlas persistence for users and prediction history
 - Google Maps-based property context
 - Full-stack Flask + React-style frontend integration
 
@@ -92,7 +93,7 @@ The main purpose of PriceNest is to provide a realistic, intelligent, and beginn
 | Dataset | CSV dataset |
 | Authentication | Firebase Authentication, Google Sign-In |
 | Maps | Google Maps Embed API, Nearby Places Integration |
-| Future Database Support | MongoDB Atlas |
+| Database | MongoDB Atlas (optional persistence through `MONGODB_URI`) |
 
 ---
 
@@ -136,6 +137,7 @@ The backend is built using Python Flask and serves both the frontend and API rou
 - Unit normalization and conversion helpers
 - Authentication configuration APIs
 - Google Maps configuration APIs
+- Optional MongoDB Atlas persistence APIs for Google users and prediction history
 
 ### Backend Responsibilities
 
@@ -146,6 +148,7 @@ The backend is built using Python Flask and serves both the frontend and API rou
 - Match selected values with dataset rows
 - Generate predictions
 - Apply amenities-based price adjustments
+- Save successful prediction history when MongoDB Atlas is configured
 - Provide insights and property demand data
 
 ---
@@ -372,6 +375,8 @@ Google Sign-In is implemented using Firebase Authentication. Users can sign in w
 - Email address
 - Profile session
 
+When MongoDB Atlas is configured, each successful Google Sign-In also creates or updates a user document in the `pricenest.users` collection. This persistence is additive only: if MongoDB is unavailable, Google Sign-In continues working normally.
+
 ### Mobile OTP Authentication
 
 Mobile OTP authentication is partially implemented using Firebase Phone Auth UI flow.
@@ -447,8 +452,9 @@ The complete PriceNest workflow is:
 8. Amenities adjustment is applied as a post-processing layer.
 9. Unit conversion is applied only for display.
 10. Prediction Price card updates dynamically.
-11. Google Map and nearby facility sections display property context.
-12. Database insights and demand sections provide additional market information.
+11. Successful predictions are saved to MongoDB Atlas when `MONGODB_URI` is configured.
+12. Google Map and nearby facility sections display property context.
+13. Database insights and demand sections provide additional market information.
 
 ---
 
@@ -484,6 +490,7 @@ PriceNest/
 |   |
 |   |-- services/
 |   |   |-- prediction_service.py
+|   |   |-- mongodb_service.py
 |   |   `-- README.md
 |   |
 |   |-- utils/
@@ -602,6 +609,8 @@ FLASK_DEBUG=True
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_MAPS_API_KEY=your_google_maps_api_key
 
+MONGODB_URI=your_mongodb_atlas_connection_string
+
 FIREBASE_API_KEY=your_firebase_api_key
 FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
 FIREBASE_PROJECT_ID=your_project_id
@@ -615,7 +624,19 @@ FIREBASE_MEASUREMENT_ID=your_measurement_id
 
 - Google Sign-In requires a valid Google OAuth client ID.
 - Google Maps features require a valid Google Maps API key.
+- MongoDB Atlas persistence is optional and requires `MONGODB_URI`.
 - Firebase Phone OTP may require billing to be enabled for SMS delivery.
+
+### MongoDB Atlas Persistence
+
+MongoDB integration is additive and failure-safe. The Flask backend reads the Atlas connection string from `MONGODB_URI`, creates/uses the `pricenest` database, and writes to two collections:
+
+| Collection | Purpose |
+|---|---|
+| `users` | Stores Google login profile records with `name`, `email`, `created_at`, and `last_login` |
+| `prediction_history` | Stores successful prediction records with `user_email`, `city`, `location`, `property_type`, `predicted_price`, and `created_at` |
+
+If `MONGODB_URI` is not set or Atlas is unavailable, PriceNest logs the issue and continues running normally. Login, prediction, maps, UI rendering, ML logic, amenities boost logic, and all existing routes remain unchanged.
 
 ---
 
@@ -636,6 +657,7 @@ FIREBASE_MEASUREMENT_ID=your_measurement_id
 | `GET` | `/properties` | Returns property records |
 | `GET` | `/top-properties` | Returns selected property listings |
 | `GET` | `/auth/config` | Returns authentication configuration |
+| `POST` | `/auth/google-login` | Additively stores/updates Google user details in MongoDB Atlas when configured |
 | `GET` | `/maps/config` | Returns map configuration |
 | `POST` | `/nearby` | Nearby places integration endpoint |
 
@@ -667,7 +689,7 @@ FIREBASE_MEASUREMENT_ID=your_measurement_id
 ## Future Improvements
 
 - Full React/Vite frontend build pipeline
-- MongoDB Atlas support for storing user reports and saved properties
+- User dashboard for reading saved prediction history from MongoDB Atlas
 - Live Google Places API nearby results with distance calculation
 - Admin dashboard for dataset management
 - User saved predictions

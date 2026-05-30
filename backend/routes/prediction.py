@@ -7,6 +7,7 @@ from typing import Any
 from flask import Blueprint, jsonify, request
 
 from backend.services.prediction_service import PredictionService
+from backend.services.mongodb_service import mongo_service
 from backend.utils.request_helpers import prediction_filters
 
 
@@ -34,7 +35,9 @@ def create_prediction_routes(service: PredictionService) -> Blueprint:
             return jsonify({"error": "Request body must be a JSON object."}), 400
 
         try:
-            return jsonify(service.predict(payload)), 200
+            prediction = service.predict(payload)
+            mongo_service.save_prediction_history(payload=payload, prediction=prediction)
+            return jsonify(prediction), 200
         except ValueError as exc:
             return jsonify({"error": str(exc)}), 400
         except Exception:
