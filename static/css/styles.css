@@ -965,6 +965,14 @@ label.wide {
   padding: 8px;
   background: var(--bg);
   border-radius: 4px;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.place-item:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
 }
 
 .static-facilities .place-item {

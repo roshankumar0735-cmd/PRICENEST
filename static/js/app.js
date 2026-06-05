@@ -161,6 +161,12 @@ function googleMapsUrl(locationLabel) {
   return `https://www.google.com/maps/search/?api=1&query=${encodedLocation}`;
 }
 
+function googleMapsFacilityUrl(facilityType, locationLabel) {
+  const location = (locationLabel || "").trim();
+  if (!location) return "";
+  return `https://www.google.com/maps/search/${encodeURIComponent(`${facilityType} near ${location}`)}`;
+}
+
 function App() {
   const [form, setForm] = useState(initialForm);
   const [options, setOptions] = useState({});
@@ -1149,7 +1155,12 @@ function MapPanel({ locationLabel }) {
   const encodedLocation = encodeURIComponent(locationLabel || "Delhi, India");
   const embedUrl = `https://maps.google.com/maps?hl=en&q=${encodedLocation}&z=14&ie=UTF8&iwloc=B&output=embed`;
   const mapUrl = googleMapsUrl(locationLabel);
-  const facilityTypes = ["Hospital", "School", "Metro Station", "Mall"];
+  const facilityTypes = [
+    { label: "Hospital", query: "hospital" },
+    { label: "School", query: "school" },
+    { label: "Metro Station", query: "metro station" },
+    { label: "Mall", query: "mall" },
+  ];
 
   return (
     <div className="map-card">
@@ -1178,10 +1189,23 @@ function MapPanel({ locationLabel }) {
       <div className="nearby-places">
         <h4>Nearby Facilities</h4>
         <div className="places-grid static-facilities">
-          {facilityTypes.map((type) => (
-            <div className="place-item" key={type}>
-              <strong>{type}</strong>
-            </div>
+          {facilityTypes.map((facility) => (
+            <a
+              className="place-item"
+              key={facility.label}
+              href={googleMapsFacilityUrl(facility.query, locationLabel)}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Search ${facility.label} near ${locationLabel || "selected location"} on Google Maps`}
+              onClick={(event) => {
+                if (!googleMapsFacilityUrl(facility.query, locationLabel)) {
+                  event.preventDefault();
+                  window.alert("Please select a location before searching nearby facilities.");
+                }
+              }}
+            >
+              <strong>{facility.label}</strong>
+            </a>
           ))}
         </div>
       </div>
